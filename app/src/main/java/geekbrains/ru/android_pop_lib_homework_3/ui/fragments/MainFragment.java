@@ -12,12 +12,14 @@ import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.arellomobile.mvp.MvpAppCompatFragment;
 import com.arellomobile.mvp.presenter.InjectPresenter;
 import com.arellomobile.mvp.presenter.ProvidePresenter;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
@@ -33,6 +35,8 @@ import static android.app.Activity.RESULT_OK;
 public class MainFragment extends MvpAppCompatFragment implements MainFragmentView {
     private static final int REQUEST_STORAGE_PERMISSION = 22;
     private static final int PICK_PICTURE_RESULT_CODE = 1;
+    @BindView(R.id.bt_fragment_main_get_picture)
+    Button actionButton;
 
     @InjectPresenter
     MainFragmentPresenter presenter;
@@ -51,6 +55,13 @@ public class MainFragment extends MvpAppCompatFragment implements MainFragmentVi
     public MainFragmentPresenter providePresenter() {
         return new MainFragmentPresenter(new ImageConverter());
     }
+
+    @OnClick(R.id.bt_fragment_main_get_picture)
+    public void getPictureToDecodeButtonClick() {
+        presenter.getPictureToDecodeButtonClick(storagePermissionGranted, actionButton.getText()
+                .equals(getString(R.string.fragment_main_bt_get_picture_to_decode_text)));
+    }
+
 
     @Override
     public View onCreateView(@NonNull final LayoutInflater inflater, final ViewGroup container,
@@ -81,7 +92,9 @@ public class MainFragment extends MvpAppCompatFragment implements MainFragmentVi
                 storagePermissionGranted = (grantResults.length > 0 &&
                         grantResults[0] == PackageManager.PERMISSION_GRANTED);
                 if (storagePermissionGranted) {
-                    presenter.getPictureToDecodeButtonClick(storagePermissionGranted);
+                    presenter.getPictureToDecodeButtonClick(storagePermissionGranted,
+                            actionButton.getText().equals(getString(
+                                    R.string.fragment_main_bt_get_picture_to_decode_text)));
                 } else {
                     presenter.noPermissionGranted();
                 }
@@ -112,17 +125,20 @@ public class MainFragment extends MvpAppCompatFragment implements MainFragmentVi
         unbinder.unbind();
     }
 
-    @OnClick(R.id.bt_fragment_main_get_picture)
-    public void getPictureToDecodeButtonClick() {
-        presenter.getPictureToDecodeButtonClick(storagePermissionGranted);
-    }
-
-
     @Override
     public void startPicturePicker() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType(getString(R.string.image_type));
         startActivityForResult(intent, PICK_PICTURE_RESULT_CODE);
+    }
+
+    @Override
+    public void checkPermission() {
+        Context context = getContext();
+        if (!storagePermissionGranted && context != null)
+            storagePermissionGranted = ContextCompat.checkSelfPermission(
+                    getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -150,24 +166,24 @@ public class MainFragment extends MvpAppCompatFragment implements MainFragmentVi
         showMessage(getString(R.string.decode_complete));
     }
 
-
     @Override
     public void showNoSelectedPictureMessage() {
         showMessage(getString(R.string.no_selected_picture));
     }
 
     @Override
-    public void checkPermission() {
-        Context context = getContext();
-        if (!storagePermissionGranted && context != null)
-            storagePermissionGranted = ContextCompat.checkSelfPermission(
-                    getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED;
+    public void showFileErrorMessage() {
+        showMessage(getString(R.string.er_file_path));
     }
 
     @Override
-    public void showFileErrorMessage() {
-        showMessage(getString(R.string.er_file_path));
+    public void showAbortButton() {
+        actionButton.setText(R.string.abort_text);
+    }
+
+    @Override
+    public void showConvertButton() {
+        actionButton.setText(R.string.fragment_main_bt_get_picture_to_decode_text);
     }
 
     private void showMessage(String message) {
@@ -180,15 +196,3 @@ public class MainFragment extends MvpAppCompatFragment implements MainFragmentVi
         return AndroidUtils.getRealPathFromMediaUri(getContext(), uri);
     }
 }
- /*imageConverter.convertToPng(filePathFromResult)
-         .subscribeOn(Schedulers.io())
-         .observeOn(AndroidSchedulers.mainThread())
-         .subscribe(result -> {
-         if (result) {
-         getViewState().showCompleteDecodeMessage();
-         } else {
-         getViewState().showDecodeErrorMessage();
-         }
-         }, throwable -> {
-         getViewState().showDecodeErrorMessage();
-         });*/

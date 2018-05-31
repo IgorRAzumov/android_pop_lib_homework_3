@@ -27,4 +27,8 @@ public interface MainFragmentView extends MvpView {
 
     @StateStrategyType(value = OneExecutionStateStrategy.class)
     void showFileErrorMessage();
+
+    void showAbortButton();
+
+    void showConvertButton();
 }

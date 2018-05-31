@@ -9,11 +9,15 @@ import geekbrains.ru.android_pop_lib_homework_3.converters.ImageConverter;
 import geekbrains.ru.android_pop_lib_homework_3.presentation.views.MainFragmentView;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
 @InjectViewState
 public class MainFragmentPresenter extends MvpPresenter<MainFragmentView> {
     private ImageConverter imageConverter;
+    private Disposable convertToPngDisposable;
 
     public MainFragmentPresenter(ImageConverter imageConverter) {
         this.imageConverter = imageConverter;
@@ -25,11 +29,19 @@ public class MainFragmentPresenter extends MvpPresenter<MainFragmentView> {
         getViewState().checkPermission();
     }
 
-    public void getPictureToDecodeButtonClick(boolean storagePermissionGranted) {
-        if (storagePermissionGranted) {
-            getViewState().startPicturePicker();
+    public void getPictureToDecodeButtonClick(boolean storagePermissionGranted, boolean action) {
+        if (!action) {
+            getViewState().showConvertButton();
+            if (convertToPngDisposable != null && !convertToPngDisposable.isDisposed()) {
+                convertToPngDisposable.dispose();
+            }
         } else {
-            getViewState().requestStoragePermission();
+            if (storagePermissionGranted) {
+                getViewState().showAbortButton();
+                getViewState().startPicturePicker();
+            } else {
+                getViewState().requestStoragePermission();
+            }
         }
     }
 
@@ -53,18 +65,23 @@ public class MainFragmentPresenter extends MvpPresenter<MainFragmentView> {
 
     @SuppressLint("CheckResult")
     private void startDecodePictureToPng(String filePath) {
-        imageConverter.convertToPng(filePath)
+        convertToPngDisposable = imageConverter.convertToPng(filePath).singleOrError()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    if (result) {
-                        getViewState().showCompleteDecodeMessage();
-                    } else {
+                .subscribeWith(new DisposableSingleObserver<Boolean>() {
+                    @Override
+                    public void onSuccess(@NonNull Boolean result) {
+                        if (result) {
+                            getViewState().showCompleteDecodeMessage();
+                        } else {
+                            getViewState().showDecodeErrorMessage();
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull Throwable e) {
                         getViewState().showDecodeErrorMessage();
                     }
-                }, throwable -> {
-                    getViewState().showDecodeErrorMessage();
                 });
-
     }
 
     public void noSelectedPicture() {
