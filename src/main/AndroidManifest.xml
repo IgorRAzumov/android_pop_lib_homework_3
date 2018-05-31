@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <activity android:name="geekbrains.ru.android_pop_lib_homework_3.android_pop_lib_homework_3.MainActivity" />
+    </application>
+</manifest>

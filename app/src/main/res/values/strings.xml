@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">android_pop_lib_homework_3</string>
+    <string name="fragment_main_bt_get_picture_to_decode_text">get picture to decode</string>
+    <string name="er_implement_on_fragment_interaction_list">error implement OnFragmentInteractionListener</string>
+    <string name="er_no_storage_permission">Sorry, app need external permission</string>
+    <string name="storage_permisson_granted_key">storage-permisson-granted-key</string>
+    <string name="image_type">image/*</string>
+    <string name="er_error_decode">eror decode</string>
+    <string name="no_selected_picture">no selected picture to convert</string>
+    <string name="decode_complete">decode complete</string>
+    <string name="er_file_path">file path error</string>
+</resources>
